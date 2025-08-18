@@ -1,6 +1,8 @@
 # Prerequisites
 *.d
 
+ft_ssl
+
 # Object files
 *.o
 *.ko
