@@ -23,20 +23,27 @@
 #define MD5 1
 #define SHA256 2
 
+struct program_ctx;
+
+struct hash_type {
+	char* name;
+	int id;
+	int digest_size;
+
+	void (*init)(struct program_ctx *);
+	void (*update)(struct program_ctx *);
+	void (*step)(struct program_ctx *);
+	void (*finalize)(struct program_ctx *);
+};
+
 struct program_ctx {
-	int type;
 	bool quiet;
 	bool reverse;
 	bool print_sum;
 	bool echo;
 	uint8_t *digest;
-	unsigned int digest_size;
-};
 
-struct table {
-	char* name;
-	int type;
-	int digest_size;
+	struct hash_type type;
 };
 
 #define error(...) \

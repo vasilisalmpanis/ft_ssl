@@ -1,8 +1,8 @@
 #include <ft_ssl.h>
 
-static struct table type_table[] = {
-	{"md5", MD5, 16},
-	{"sha256", SHA256, 0},
+static struct hash_type type_table[] = {
+	{"md5", MD5, 16, NULL, NULL, NULL, NULL},
+	{"sha256", SHA256, 0, NULL, NULL, NULL, NULL},
 	{0},
 };
 
@@ -19,16 +19,15 @@ void usage(char *name)
 
 void parse_type(struct program_ctx *ctx, char *type)
 {
-	for (int i = 0; type_table[i].type != 0; i++) {
+	for (int i = 0; type_table[i].id != 0; i++) {
 		if (memcmp(type, type_table[i].name, strlen(type)) == 0) {
 			// Initialize context
-			ctx->type = type_table[i].type;
-			ctx->digest_size = type_table[i].digest_size;
+			ctx->type = type_table[i];
 			ctx->digest = (uint8_t *)malloc(type_table[i].digest_size);
 			if (ctx->digest == NULL) error("Fatal: Out of memory");
 		}
 	}
-	if (ctx->type == NONE) error(INVALID_TYPE, type);
+	if (ctx->type.id == NONE) error(INVALID_TYPE, type);
 }
 
 void parse_args(struct program_ctx *ctx, int argc, char **argv)
