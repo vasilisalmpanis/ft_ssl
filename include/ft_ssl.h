@@ -23,6 +23,8 @@
 #define MD5 1
 #define SHA256 2
 
+extern struct hash_type md5_type;
+
 struct program_ctx;
 
 struct hash_type {
@@ -34,6 +36,7 @@ struct hash_type {
 	void (*update)(struct program_ctx *);
 	void (*step)(struct program_ctx *);
 	void (*finalize)(struct program_ctx *);
+	void (*free)(struct program_ctx *);
 };
 
 struct program_ctx {

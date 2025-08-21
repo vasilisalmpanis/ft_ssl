@@ -1,5 +1,7 @@
 NAME    =   ft_ssl
-SRC     =   src/main.c
+SRC     =   src/main.c \
+	    src/md5.c
+
 RM      =   rm -rf
 CC      =   gcc
 CFLAGS  =   -Wall -Wextra -Werror
