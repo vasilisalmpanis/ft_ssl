@@ -9,10 +9,10 @@ OBJ     =   $(SRC:.c=.o)
 all: ${NAME}
 
 ${NAME}: ${OBJ}
-		${CC} ${CFLAGS} ${OBJ} -o ${NAME}
+		${CC} ${CFLAGS} -I./include/ ${OBJ} -o ${NAME}
 
 %.o: %.c
-		${CC} ${CFLAGS} -c $< -o $@
+		${CC} ${CFLAGS} -I./include/ -c $< -o $@
 
 clean:
 		${RM} ${OBJ}

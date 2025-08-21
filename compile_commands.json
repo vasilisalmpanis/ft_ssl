@@ -1,0 +1,18 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I./include/",
+      "-c",
+      "-o",
+      "src/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/valmpani/ft_ssl",
+    "file": "/home/valmpani/ft_ssl/src/main.c",
+    "output": "/home/valmpani/ft_ssl/src/main.o"
+  }
+]
