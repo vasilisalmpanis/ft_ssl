@@ -1,4 +1,5 @@
 #include <ft_ssl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -33,15 +34,27 @@ void parse_args(struct program_ctx *ctx, int argc, char **argv)
 {
 	parse_type(ctx, argv[1]);
 	for (int i = 2; i < argc; i++) {
-		if (strcmp(argv[i], "-p") == 0)
+		if (strcmp(argv[i], "-p") == 0) {
 			ctx->echo = true;
-		else if (strcmp(argv[i], "-s") == 0)
+			continue;
+		}
+		else if (strcmp(argv[i], "-s") == 0) {
 			ctx->quiet = true;
-		else if (strcmp(argv[i], "-q") == 0)
+			continue;
+		}
+		else if (strcmp(argv[i], "-q") == 0) {
 			ctx->reverse = true;
-		else if (strcmp(argv[i], "-r") == 0)
+			continue;
+		}
+		else if (strcmp(argv[i], "-r") == 0) {
 			ctx->print_sum = true;
-
+			continue;
+		}
+		else if (ctx->user_input != NULL) {
+			error("Fatal");
+		}
+		ctx->user_input = (uint8_t *)argv[i];
+		ctx->user_input_len = strlen(argv[i]);
 	}
 }
 
@@ -64,16 +77,16 @@ int main(int argc, char *argv[])
 	}
 	memset(&context, 0, sizeof(struct program_ctx));
 	parse_args(&context, argc, argv);
+	if (context.user_input == NULL) error("Please provide content to be hashed\n");
 	if (context.type.init) {
 		context.type.init(&context);
 	}
 	if (context.type.update) {
-		context.type.update(&context);
+		context.type.update(&context, context.user_input, context.user_input_len);
 	}
 	if (context.type.finalize) {
 		context.type.finalize(&context);
 	}
-	printf("digest: %s\n", context.digest);
 	if (context.type.free) {
 		context.type.free(&context);
 	}
