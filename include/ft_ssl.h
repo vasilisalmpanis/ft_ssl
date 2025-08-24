@@ -34,8 +34,7 @@ struct hash_type {
 	int digest_size;
 
 	void (*init)(struct program_ctx *);
-	void (*update)(struct program_ctx *, uint8_t *, size_t);
-	void (*finalize)(struct program_ctx *);
+	void (*digest)(struct program_ctx *);
 	void (*free)(struct program_ctx *);
 };
 
@@ -44,7 +43,6 @@ struct program_ctx {
 	bool reverse;
 	bool print_sum;
 	bool echo;
-	uint8_t *digest;
 
 	uint8_t *user_input;
 	size_t user_input_len;

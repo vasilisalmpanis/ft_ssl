@@ -58,14 +58,6 @@ void parse_args(struct program_ctx *ctx, int argc, char **argv)
 	}
 }
 
-/*
- * MD% steps
- * 1. Input Padding
- * 2. Length Appending
- * 3. Buffer Initialization
- * 4. Message Processing
- * 5. Output
- */
 int main(int argc, char *argv[])
 {
 	char *program_name = argv[0];
@@ -81,11 +73,8 @@ int main(int argc, char *argv[])
 	if (context.type.init) {
 		context.type.init(&context);
 	}
-	if (context.type.update) {
-		context.type.update(&context, context.user_input, context.user_input_len);
-	}
-	if (context.type.finalize) {
-		context.type.finalize(&context);
+	if (context.type.digest) {
+		context.type.digest(&context);
 	}
 	if (context.type.free) {
 		context.type.free(&context);

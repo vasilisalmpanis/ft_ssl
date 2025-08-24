@@ -1,22 +1,17 @@
 #include <ft_ssl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 
 static void md5_init(struct program_ctx *ctx);
-static void md5_update(struct program_ctx *ctx, uint8_t *input_buffer, size_t input_len);
-static void md5_step(uint32_t *buffer, uint32_t *input);
-static void md5_finalize(struct program_ctx *ctx);
+static void md5_digest(struct program_ctx *ctx);
 static void md5_free(struct program_ctx *ctx);
 
-struct hash_type md5_type = {"md5", MD5, 16, md5_init, md5_update, md5_finalize, md5_free};
+struct hash_type md5_type = {"md5", MD5, 16, md5_init, md5_digest, md5_free};
 
 struct md5_data {
-	uint64_t size;
+	uint64_t bits_len;
+	uint8_t *msg;
+	size_t total_len;
 	uint32_t buffer[4];
-	uint8_t input[64];
 	uint8_t digest[16];
 };
 
@@ -51,173 +46,130 @@ static uint32_t K[] = {
 	0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
 };
 
-/*
- * Padding used to make the size (in bits) of the input congruent to 448 mod 512
- */
-static uint8_t PADDING[] = {
-	0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
-#define F(X, Y, Z) ((X & Y) | (~X & Z))
-#define G(X, Y, Z) ((X & Z) | (Y & ~Z))
+#define F(X, Y, Z) ((X & Y) | ((~X) & Z))
+#define G(X, Y, Z) ((X & Z) | ((~X) & Y))
 #define H(X, Y, Z) (X ^ Y ^ Z)
-#define I(X, Y, Z) (Y ^ (X | ~Z))
+#define I(X, Y, Z) (Y ^ (X | (~Z)))
 
-static void print_md5_digest(uint8_t *digest)
+uint32_t rotateLeft(uint32_t x, uint32_t n){
+	return (x << n) | (x >> (32 - n));
+}
+
+static void print_md5_digest(struct program_ctx* ctx, uint8_t *digest)
 {
-	printf("MD5(stdin)= ");
+	if (ctx->user_input)
+		printf("MD5(%s)= ", ctx->user_input);
+	else
+		printf("MD5(stdin)= ");
 	for(int i = 0; i < 16; i++) {
 		printf("%02x", digest[i]);
 	}
 	printf("\n");
 }
 
+/*
+ * MD% steps
+ * 1. Input Padding
+ * 2. Length Appending
+ * 3. Buffer Initialization
+ * 4. Message Processing
+ * 5. Output
+ */
 static void md5_init(struct program_ctx *ctx)
 {
-	ctx->digest = (uint8_t *)malloc(md5_type.digest_size);
-	if (ctx->digest == NULL) error("Fatal: Out of memory");
-	memset(ctx->digest, 0, md5_type.digest_size);
 	struct md5_data *data = malloc(sizeof(struct md5_data));
-	if (data == NULL) {
-		free(ctx->digest);
-		error("Fatal: Out of memory");
-	}
+	if (data == NULL) error("Fatal: Out of memory");
+
 	memset(data, 0, sizeof(struct md5_data));
 	data->buffer[0] = A;
 	data->buffer[1] = B;
 	data->buffer[2] = C;
 	data->buffer[3] = D;
 	ctx->data = data;
+
+	size_t new_len = ctx->user_input_len + 1;
+	while (new_len % 64 != 56) new_len++;
+	size_t total_len = new_len + 8;
+	uint8_t *msg = calloc(total_len, 1);
+	if (!msg) {
+		free(ctx->data);
+		error("Fatal: Out of memory on calloc %lu %lu %lu %s\n", total_len, new_len, ctx->user_input_len, ctx->user_input);
+	}
+	memcpy(msg, ctx->user_input, ctx->user_input_len);
+	msg[ctx->user_input_len] = 0x80;
+	uint64_t bits_length = (uint64_t)ctx->user_input_len * 8;
+	memcpy(msg + new_len, &bits_length, 8);
+	data->total_len = total_len;
+	data->bits_len = bits_length;
+	data->msg = msg;
 }
 
-static void md5_update(struct program_ctx *ctx, uint8_t *input_buffer, size_t input_len){
-	struct md5_data *data = (struct md5_data *)ctx->data;
-	uint32_t input[16];
-	unsigned int offset = data->size % 64;
-	data->size += (uint64_t)input_len;
+static void md5_digest(struct program_ctx *ctx){
+	struct md5_data *data = ctx->data;
+	for (size_t offset = 0; offset < data->total_len; offset += 64) {
+		// Break chunk into sixteen 32-bit words M[j] in little-endian
+		uint32_t M[16];
+		for (int j = 0; j < 16; j++) {
+			// Read 4 bytes little-endian into uint32_t
+			uint32_t m =
+				(uint32_t)data->msg[offset + j*4 + 0]        |
+				((uint32_t)data->msg[offset + j*4 + 1] << 8) |
+				((uint32_t)data->msg[offset + j*4 + 2] << 16)|
+				((uint32_t)data->msg[offset + j*4 + 3] << 24);
+			M[j] = m;
+		}
 
-	// Copy each byte in input_buffer into the next space in our context input
-	for(unsigned int i = 0; i < input_len; ++i){
-		data->input[offset++] = (uint8_t)*(input_buffer + i);
+		uint32_t a = data->buffer[0];
+		uint32_t b = data->buffer[1];
+		uint32_t c = data->buffer[2];
+		uint32_t d = data->buffer[3];
 
-		// If we've filled our context input, copy it into our local array input
-		// then reset the offset to 0 and fill in a new buffer.
-		// Every time we fill out a chunk, we run it through the algorithm
-		// to enable some back and forth between cpu and i/o
-		if(offset % 64 == 0){
-			for(unsigned int j = 0; j < 16; ++j){
-				// Convert to little-endian
-				// The local variable `input` our 512-bit chunk separated into 32-bit words
-				// we can use in calculations
-				input[j] = (uint32_t)(data->input[(j * 4) + 3]) << 24 |
-					(uint32_t)(data->input[(j * 4) + 2]) << 16 |
-					(uint32_t)(data->input[(j * 4) + 1]) <<  8 |
-					(uint32_t)(data->input[(j * 4)]);
+		for (uint32_t i = 0; i < 64; i++) {
+			uint32_t F, g;
+
+			if (i <= 15) {
+				F = (b & c) | ((~b) & d);
+				g = i;
+			} else if (i <= 31) {
+				F = (d & b) | ((~d) & c);
+				g = (5*i + 1) & 0x0F;
+			} else if (i <= 47) {
+				F = b ^ c ^ d;
+				g = (3*i + 5) & 0x0F;
+			} else {
+				F = c ^ (b | (~d));
+				g = (7*i) & 0x0F;
 			}
-			md5_step(data->buffer, input);
-			offset = 0;
-		}
-	}
-}
 
-uint32_t rotateLeft(uint32_t x, uint32_t n){
-	return (x << n) | (x >> (32 - n));
-}
+			uint32_t tmp = d;
+			d = c;
+			c = b;
 
-static void md5_step(uint32_t *buffer, uint32_t *input)
-{
-	uint32_t AA = buffer[0];
-	uint32_t BB = buffer[1];
-	uint32_t CC = buffer[2];
-	uint32_t DD = buffer[3];
-
-	uint32_t E;
-
-	unsigned int j;
-
-	for(unsigned int i = 0; i < 64; ++i){
-		switch(i / 16){
-			case 0:
-				E = F(BB, CC, DD);
-				j = i;
-				break;
-			case 1:
-				E = G(BB, CC, DD);
-				j = ((i * 5) + 1) % 16;
-				break;
-			case 2:
-				E = H(BB, CC, DD);
-				j = ((i * 3) + 5) % 16;
-				break;
-			default:
-				E = I(BB, CC, DD);
-				j = (i * 7) % 16;
-				break;
+			uint32_t to_rot = a + F + K[i] + M[g];
+			b = b + rotateLeft(to_rot, S[i]);
+			a = tmp;
 		}
 
-		uint32_t temp = DD;
-		DD = CC;
-		CC = BB;
-		BB = BB + rotateLeft(AA + E + K[i] + input[j], S[i]);
-		AA = temp;
+		data->buffer[0] += a;
+		data->buffer[1] += b;
+		data->buffer[2] += c;
+		data->buffer[3] += d;
 	}
 
-	buffer[0] += AA;
-	buffer[1] += BB;
-	buffer[2] += CC;
-	buffer[3] += DD;
-}
-
-static void md5_finalize(struct program_ctx *ctx)
-{
-	uint32_t input[16];
-	struct md5_data *data = (struct md5_data *)ctx->data;
-	unsigned int offset = data->size % 64;
-	unsigned int padding_length = offset < 56 ? 56 - offset : (56 + 64) - offset;
-
-	// Add padding directly to the input buffer
-	if (padding_length > 0) {
-		memcpy(data->input + offset, PADDING, padding_length);
-	}
-
-	// Process all 16 words from the input buffer
-	for(unsigned int j = 0; j < 16; ++j){
-		input[j] = (uint32_t)(data->input[(j * 4) + 3]) << 24 |
-			(uint32_t)(data->input[(j * 4) + 2]) << 16 |
-			(uint32_t)(data->input[(j * 4) + 1]) <<  8 |
-			(uint32_t)(data->input[(j * 4)]);
-	}
-
-	// Set the length in the last two words (little-endian)
-	input[14] = (uint32_t)(data->size * 8);
-	input[15] = (uint32_t)((data->size * 8) >> 32);
-
-	md5_step(data->buffer, input);
-
-	// Move the result into digest (convert from little-endian)
-	for(unsigned int i = 0; i < 4; ++i){
-		data->digest[(i * 4) + 0] = (uint8_t)((data->buffer[i] & 0x000000FF));
-		data->digest[(i * 4) + 1] = (uint8_t)((data->buffer[i] & 0x0000FF00) >>  8);
-		data->digest[(i * 4) + 2] = (uint8_t)((data->buffer[i] & 0x00FF0000) >> 16);
-		data->digest[(i * 4) + 3] = (uint8_t)((data->buffer[i] & 0xFF000000) >> 24);
-	}
-
-	// Copy the final digest to the context
-	memcpy(ctx->digest, data->digest, md5_type.digest_size);
-	print_md5_digest(ctx->digest);
+	uint8_t output[16];
+	memcpy(output + 0,  &data->buffer[0], 4);
+	memcpy(output + 4,  &data->buffer[1], 4);
+	memcpy(output + 8,  &data->buffer[2], 4);
+	memcpy(output + 12, &data->buffer[3], 4);
+	print_md5_digest(ctx, output);
 }
 
 static void md5_free(struct program_ctx *ctx)
 {
-	if (ctx->digest)
-		free(ctx->digest);
-	if (ctx->data)
+	if (ctx->data) {
+		struct md5_data *data = (struct md5_data*)ctx->data;
+		if (data->msg)
+			free(data->msg);
 		free(ctx->data);
+	}
 }
