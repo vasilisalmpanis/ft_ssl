@@ -5,7 +5,14 @@ static void md5_init(struct program_ctx *ctx);
 static void md5_digest(struct program_ctx *ctx);
 static void md5_free(struct program_ctx *ctx);
 
-struct hash_type md5_type = {"md5", MD5, 16, md5_init, md5_digest, md5_free};
+struct hash_type md5_type = {
+	.name 		= "md5", 
+	.id 		= MD5, 
+	.digest_size 	= 16, 
+	.init 		= md5_init, 
+	.digest 	= md5_digest, 
+	.free 		= md5_free
+};
 
 struct md5_data {
 	uint64_t bits_len;
@@ -51,7 +58,7 @@ static uint32_t K[] = {
 #define H(X, Y, Z) (X ^ Y ^ Z)
 #define I(X, Y, Z) (Y ^ (X | (~Z)))
 
-uint32_t rotateLeft(uint32_t x, uint32_t n){
+static uint32_t rotateLeft(uint32_t x, uint32_t n){
 	return (x << n) | (x >> (32 - n));
 }
 

@@ -5,6 +5,7 @@
 
 static struct hash_type *type_table[] = {
 	&md5_type,
+	&sha256_type,
 	NULL,
 };
 

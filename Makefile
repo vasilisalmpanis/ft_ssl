@@ -1,6 +1,7 @@
 NAME    =   ft_ssl
-SRC     =   src/main.c \
-	    src/md5.c
+SRC     =   src/main.c  \
+	    src/md5.c	\
+	    src/sha256.c
 
 RM      =   rm -rf
 CC      =   gcc

@@ -25,6 +25,7 @@
 #define SHA256 2
 
 extern struct hash_type md5_type;
+extern struct hash_type sha256_type;
 
 struct program_ctx;
 
