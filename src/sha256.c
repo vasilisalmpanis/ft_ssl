@@ -203,5 +203,10 @@ static void sha256_digest(struct program_ctx *ctx) {
 
 static void sha256_free(struct program_ctx *ctx)
 {
-	(void)ctx;
+	if (ctx->data) {
+		struct sha256_data *data = (struct sha256_data*)ctx->data;
+		if (data->msg)
+			free(data->msg);
+		free(ctx->data);
+	}
 }
