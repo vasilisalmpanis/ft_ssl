@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 static struct hash_type *type_table[] = {
 	&md5_type,
@@ -63,6 +64,7 @@ int main(int argc, char *argv[])
 {
 	char *program_name = argv[0];
 	struct program_ctx context;
+	context.fd = STDIN_FILENO;
 
 	if (argc == 1) {
 		usage(program_name);

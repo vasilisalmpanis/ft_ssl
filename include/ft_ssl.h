@@ -45,6 +45,8 @@ struct program_ctx {
 	bool print_sum;
 	bool echo;
 
+	int fd;
+
 	uint8_t *user_input;
 	size_t user_input_len;
 
