@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <fcntl.h>
 
 #define USAGE_MSG "command [flags]... [file/string]...\n"
 #define INVALID_TYPE "Invalid command '%s'; type \"help\" for a list.\n"
@@ -35,7 +36,7 @@ struct hash_type {
 	int digest_size;
 
 	void (*init)(struct program_ctx *);
-	void (*digest)(struct program_ctx *);
+	void (*digest)(struct program_ctx *, bool stdin);
 	void (*free)(struct program_ctx *);
 };
 

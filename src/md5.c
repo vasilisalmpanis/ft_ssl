@@ -2,7 +2,7 @@
 
 
 static void md5_init(struct program_ctx *ctx);
-static void md5_digest(struct program_ctx *ctx);
+static void md5_digest(struct program_ctx *ctx, bool stdin);
 static void md5_free(struct program_ctx *ctx);
 
 struct hash_type md5_type = {
@@ -62,12 +62,23 @@ static uint32_t rotateLeft(uint32_t x, uint32_t n){
 	return (x << n) | (x >> (32 - n));
 }
 
-static void print_md5_digest(struct program_ctx* ctx, uint8_t *digest)
+static void print_md5_digest(struct program_ctx* ctx, uint8_t *digest, bool stdin)
 {
-	if (ctx->user_input)
-		printf("MD5(%s)= ", ctx->user_input);
-	else
-		printf("MD5(stdin)= ");
+	if (stdin) {
+		if (ctx->echo)
+			printf("(\"%s\")= ", ctx->user_input);
+		else
+			printf("(stdin)= ");
+	}
+	else if (ctx->user_input) {
+		if (!ctx->quiet) {
+			printf("MD5(%s)= ", ctx->user_input);
+		}
+	}
+	else {
+		if (!ctx->quiet)
+			printf("MD5(stdin)= ");
+	}
 	for(int i = 0; i < 16; i++) {
 		printf("%02x", digest[i]);
 	}
@@ -111,7 +122,8 @@ static void md5_init(struct program_ctx *ctx)
 	data->msg = msg;
 }
 
-static void md5_digest(struct program_ctx *ctx){
+static void md5_digest(struct program_ctx *ctx, bool stdin)
+{
 	struct md5_data *data = ctx->data;
 	for (size_t offset = 0; offset < data->total_len; offset += 64) {
 		// Break chunk into sixteen 32-bit words M[j] in little-endian
@@ -168,7 +180,7 @@ static void md5_digest(struct program_ctx *ctx){
 	memcpy(output + 4,  &data->buffer[1], 4);
 	memcpy(output + 8,  &data->buffer[2], 4);
 	memcpy(output + 12, &data->buffer[3], 4);
-	print_md5_digest(ctx, output);
+	print_md5_digest(ctx, output, stdin);
 }
 
 static void md5_free(struct program_ctx *ctx)

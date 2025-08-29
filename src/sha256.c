@@ -2,7 +2,7 @@
 
 // Spec: https://datatracker.ietf.org/doc/html/rfc6234
 static void sha256_init(struct program_ctx *ctx);
-static void sha256_digest(struct program_ctx *ctx);
+static void sha256_digest(struct program_ctx *ctx, bool stdin);
 static void sha256_free(struct program_ctx *ctx);
 
 struct hash_type sha256_type = {
@@ -41,41 +41,51 @@ static uint32_t K[] = {
 	0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 };
 
-static inline uint32_t ROTR(uint32_t x, uint32_t n) {
+static inline uint32_t ROTR(uint32_t x, uint32_t n)
+{
     return (x >> n) | (x << (32 - n));
 }
 
-static inline uint32_t SHR(uint32_t x, uint32_t n) {
+static inline uint32_t SHR(uint32_t x, uint32_t n)
+{
     return x >> n;
 }
 
-static inline uint32_t CH(uint32_t x, uint32_t y, uint32_t z) {
+static inline uint32_t CH(uint32_t x, uint32_t y, uint32_t z)
+{
     return (x & y) ^ (~x & z);
 }
 
-static inline uint32_t MAJ(uint32_t x, uint32_t y, uint32_t z) {
+static inline uint32_t MAJ(uint32_t x, uint32_t y, uint32_t z)
+{
     return (x & y) ^ (x & z) ^ (y & z);
 }
 
-static inline uint32_t BSIG0(uint32_t x) {
+static inline uint32_t BSIG0(uint32_t x)
+{
     return ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22);
 }
 
-static inline uint32_t BSIG1(uint32_t x) {
+static inline uint32_t BSIG1(uint32_t x)
+{
     return ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25);
 }
 
-static inline uint32_t SSIG0(uint32_t x) {
+static inline uint32_t SSIG0(uint32_t x)
+{
     return ROTR(x, 7) ^ ROTR(x, 18) ^ SHR(x, 3);
 }
 
-static inline uint32_t SSIG1(uint32_t x) {
+static inline uint32_t SSIG1(uint32_t x)
+{
     return ROTR(x, 17) ^ ROTR(x, 19) ^ SHR(x, 10);
 }
 
-static void print_sha256_digest(struct program_ctx* ctx, uint8_t *digest)
+static void print_sha256_digest(struct program_ctx* ctx, uint8_t *digest, bool stdin)
 {
-	if (ctx->user_input)
+	if (stdin)
+		printf("(\"%s\")= ", ctx->user_input);
+	else if (ctx->user_input)
 		printf("SHA2-256(%s)= ", ctx->user_input);
 	else
 		printf("SHA2-256(stdin)= ");
@@ -113,20 +123,23 @@ static void sha256_init(struct program_ctx *ctx)
 }
 
 // Helpers for big-endian load/store
-static inline uint32_t load_be32(const uint8_t *p) {
+static inline uint32_t load_be32(const uint8_t *p)
+{
     return ((uint32_t)p[0] << 24) |
            ((uint32_t)p[1] << 16) |
            ((uint32_t)p[2] <<  8) |
            ((uint32_t)p[3] <<  0);
 }
-static inline void store_be32(uint8_t *p, uint32_t v) {
+static inline void store_be32(uint8_t *p, uint32_t v)
+{
     p[0] = (uint8_t)(v >> 24);
     p[1] = (uint8_t)(v >> 16);
     p[2] = (uint8_t)(v >>  8);
     p[3] = (uint8_t)(v >>  0);
 }
 
-static void sha256_digest(struct program_ctx *ctx) {
+static void sha256_digest(struct program_ctx *ctx, bool stdin)
+{
     struct sha256_data *data = (struct sha256_data *)ctx->data;
 
     // Initial hash values (per FIPS 180-4 / RFC 6234)
@@ -198,7 +211,7 @@ static void sha256_digest(struct program_ctx *ctx) {
     store_be32(&data->digest[24], h6);
     store_be32(&data->digest[28], h7);
 
-    print_sha256_digest(ctx, data->digest);
+    print_sha256_digest(ctx, data->digest, stdin);
 }
 
 static void sha256_free(struct program_ctx *ctx)
