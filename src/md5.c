@@ -62,29 +62,6 @@ static uint32_t rotateLeft(uint32_t x, uint32_t n){
 	return (x << n) | (x >> (32 - n));
 }
 
-static void print_md5_digest(struct program_ctx* ctx, uint8_t *digest, bool stdin)
-{
-	if (stdin) {
-		if (ctx->echo)
-			printf("(\"%s\")= ", ctx->user_input);
-		else
-			printf("(stdin)= ");
-	}
-	else if (ctx->user_input) {
-		if (!ctx->quiet) {
-			printf("MD5(%s)= ", ctx->user_input);
-		}
-	}
-	else {
-		if (!ctx->quiet)
-			printf("MD5(stdin)= ");
-	}
-	for(int i = 0; i < 16; i++) {
-		printf("%02x", digest[i]);
-	}
-	printf("\n");
-}
-
 /*
  * MD% steps
  * 1. Input Padding
@@ -180,7 +157,7 @@ static void md5_digest(struct program_ctx *ctx, bool stdin)
 	memcpy(output + 4,  &data->buffer[1], 4);
 	memcpy(output + 8,  &data->buffer[2], 4);
 	memcpy(output + 12, &data->buffer[3], 4);
-	print_md5_digest(ctx, output, stdin);
+	print_digest(ctx, "MD5", output, stdin);
 }
 
 static void md5_free(struct program_ctx *ctx)

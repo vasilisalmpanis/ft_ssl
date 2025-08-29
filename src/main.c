@@ -128,6 +128,8 @@ void parse_args(struct program_ctx *ctx, int argc, char **argv)
 			}
 			ctx->user_input = (uint8_t *)file;
 			ctx->user_input_len = out_size;
+			ctx->file = true;
+			ctx->filename = argv[i];
 			hash(ctx, false);
 			free(file);
 			file = NULL;
@@ -139,7 +141,7 @@ void parse_args(struct program_ctx *ctx, int argc, char **argv)
 
 		ctx->user_input = (uint8_t *)stdin;
 		ctx->user_input_len = out_size;
-		hash(ctx, false);
+		hash(ctx, true);
 		free(stdin);
 	}
 }

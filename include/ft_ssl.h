@@ -13,9 +13,9 @@
 	"md5 sha256\n" \
 	"\nOptions:\n" \
 	"  -p	echo STDIN to STDOUT and append the checksum to STDOUT\n" \
-	"  -s	quiet mode\n" \
-	"  -q	reverse the format of the output\n" \
-	"  -r	print the sum of the given string\n" \
+	"  -q	quiet mode\n" \
+	"  -r	reverse the format of the output\n" \
+	"  -s	print the sum of the given string\n" \
 	"\nExit status:\n" \
 	" 0  if OK,\n" \
 	" 1  if minor problems\n" \
@@ -46,6 +46,9 @@ struct program_ctx {
 	bool print_sum;
 	bool echo;
 
+	bool file;
+	char *filename;
+
 	int fd;
 
 	uint8_t *user_input;
@@ -60,3 +63,44 @@ struct program_ctx {
         fprintf(stderr, __VA_ARGS__); \
         exit(1); \
     } while (0)
+
+__attribute__((unused))
+static void print_digest(struct program_ctx* ctx, char* type, uint8_t *digest, bool stdin)
+{
+	if (ctx->reverse) {
+		for(int i = 0; i < ctx->type.digest_size; i++) {
+			printf("%02x", digest[i]);
+		}
+		if (stdin && !ctx->quiet) {
+			if (ctx->echo)
+				printf(" (\"%s\") ", ctx->user_input);
+			else
+				printf(" (stdin) ");
+		}
+		else if (ctx->user_input) {
+			if (!ctx->quiet && ctx->file) {
+				printf(" %s ", ctx->filename);
+			} else if (!ctx->quiet) {
+				printf(" \"%s\" ", ctx->user_input);
+			}
+		}
+	} else {
+		if (stdin && !ctx->quiet) {
+			if (ctx->echo)
+				printf("(\"%s\")= ", ctx->user_input);
+			else
+				printf("(stdin)= ");
+		}
+		else if (ctx->user_input) {
+			if (!ctx->quiet && ctx->file) {
+				printf("%s(%s)= ", type, ctx->filename);
+			} else if (!ctx->quiet) {
+				printf("%s(\"%s\")= ", type, ctx->user_input);
+			}
+		}
+		for(int i = 0; i < ctx->type.digest_size; i++) {
+			printf("%02x", digest[i]);
+		}
+	}
+	printf("\n");
+}

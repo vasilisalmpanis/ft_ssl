@@ -43,56 +43,42 @@ static uint32_t K[] = {
 
 static inline uint32_t ROTR(uint32_t x, uint32_t n)
 {
-    return (x >> n) | (x << (32 - n));
+	return (x >> n) | (x << (32 - n));
 }
 
 static inline uint32_t SHR(uint32_t x, uint32_t n)
 {
-    return x >> n;
+	return x >> n;
 }
 
 static inline uint32_t CH(uint32_t x, uint32_t y, uint32_t z)
 {
-    return (x & y) ^ (~x & z);
+	return (x & y) ^ (~x & z);
 }
 
 static inline uint32_t MAJ(uint32_t x, uint32_t y, uint32_t z)
 {
-    return (x & y) ^ (x & z) ^ (y & z);
+	return (x & y) ^ (x & z) ^ (y & z);
 }
 
 static inline uint32_t BSIG0(uint32_t x)
 {
-    return ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22);
+	return ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22);
 }
 
 static inline uint32_t BSIG1(uint32_t x)
 {
-    return ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25);
+	return ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25);
 }
 
 static inline uint32_t SSIG0(uint32_t x)
 {
-    return ROTR(x, 7) ^ ROTR(x, 18) ^ SHR(x, 3);
+	return ROTR(x, 7) ^ ROTR(x, 18) ^ SHR(x, 3);
 }
 
 static inline uint32_t SSIG1(uint32_t x)
 {
-    return ROTR(x, 17) ^ ROTR(x, 19) ^ SHR(x, 10);
-}
-
-static void print_sha256_digest(struct program_ctx* ctx, uint8_t *digest, bool stdin)
-{
-	if (stdin)
-		printf("(\"%s\")= ", ctx->user_input);
-	else if (ctx->user_input)
-		printf("SHA2-256(%s)= ", ctx->user_input);
-	else
-		printf("SHA2-256(stdin)= ");
-	for(int i = 0; i < 32; i++) {
-		printf("%02x", digest[i]);
-	}
-	printf("\n");
+	return ROTR(x, 17) ^ ROTR(x, 19) ^ SHR(x, 10);
 }
 
 static void sha256_init(struct program_ctx *ctx)
@@ -125,93 +111,93 @@ static void sha256_init(struct program_ctx *ctx)
 // Helpers for big-endian load/store
 static inline uint32_t load_be32(const uint8_t *p)
 {
-    return ((uint32_t)p[0] << 24) |
-           ((uint32_t)p[1] << 16) |
-           ((uint32_t)p[2] <<  8) |
-           ((uint32_t)p[3] <<  0);
+	return ((uint32_t)p[0] << 24) |
+		((uint32_t)p[1] << 16) |
+		((uint32_t)p[2] <<  8) |
+		((uint32_t)p[3] <<  0);
 }
 static inline void store_be32(uint8_t *p, uint32_t v)
 {
-    p[0] = (uint8_t)(v >> 24);
-    p[1] = (uint8_t)(v >> 16);
-    p[2] = (uint8_t)(v >>  8);
-    p[3] = (uint8_t)(v >>  0);
+	p[0] = (uint8_t)(v >> 24);
+	p[1] = (uint8_t)(v >> 16);
+	p[2] = (uint8_t)(v >>  8);
+	p[3] = (uint8_t)(v >>  0);
 }
 
 static void sha256_digest(struct program_ctx *ctx, bool stdin)
 {
-    struct sha256_data *data = (struct sha256_data *)ctx->data;
+	struct sha256_data *data = (struct sha256_data *)ctx->data;
 
-    // Initial hash values (per FIPS 180-4 / RFC 6234)
-    uint32_t h0 = 0x6a09e667U;
-    uint32_t h1 = 0xbb67ae85U;
-    uint32_t h2 = 0x3c6ef372U;
-    uint32_t h3 = 0xa54ff53aU;
-    uint32_t h4 = 0x510e527fU;
-    uint32_t h5 = 0x9b05688cU;
-    uint32_t h6 = 0x1f83d9abU;
-    uint32_t h7 = 0x5be0cd19U;
+	// Initial hash values (per FIPS 180-4 / RFC 6234)
+	uint32_t h0 = 0x6a09e667U;
+	uint32_t h1 = 0xbb67ae85U;
+	uint32_t h2 = 0x3c6ef372U;
+	uint32_t h3 = 0xa54ff53aU;
+	uint32_t h4 = 0x510e527fU;
+	uint32_t h5 = 0x9b05688cU;
+	uint32_t h6 = 0x1f83d9abU;
+	uint32_t h7 = 0x5be0cd19U;
 
-    const uint8_t *msg = data->msg;
-    size_t total_len = data->total_len;
+	const uint8_t *msg = data->msg;
+	size_t total_len = data->total_len;
 
-    // Process 512-bit (64-byte) chunks
-    for (size_t off = 0; off < total_len; off += 64) {
-        uint32_t W[64];
+	// Process 512-bit (64-byte) chunks
+	for (size_t off = 0; off < total_len; off += 64) {
+		uint32_t W[64];
 
-        //    First 16 words are the block interpreted as big-endian 32-bit ints.
-        for (int t = 0; t < 16; ++t) {
-            W[t] = load_be32(msg + off + (t * 4));
-        }
-        //    Extend to 64 words with the σ0/σ1 functions
-        for (int t = 16; t < 64; ++t) {
-            W[t] = SSIG1(W[t-2]) + W[t-7] + SSIG0(W[t-15]) + W[t-16];
-        }
+		//    First 16 words are the block interpreted as big-endian 32-bit ints.
+		for (int t = 0; t < 16; ++t) {
+			W[t] = load_be32(msg + off + (t * 4));
+		}
+		//    Extend to 64 words with the σ0/σ1 functions
+		for (int t = 16; t < 64; ++t) {
+			W[t] = SSIG1(W[t-2]) + W[t-7] + SSIG0(W[t-15]) + W[t-16];
+		}
 
-        uint32_t a = h0;
-        uint32_t b = h1;
-        uint32_t c = h2;
-        uint32_t d = h3;
-        uint32_t e = h4;
-        uint32_t f = h5;
-        uint32_t g = h6;
-        uint32_t h = h7;
+		uint32_t a = h0;
+		uint32_t b = h1;
+		uint32_t c = h2;
+		uint32_t d = h3;
+		uint32_t e = h4;
+		uint32_t f = h5;
+		uint32_t g = h6;
+		uint32_t h = h7;
 
-        // Main compression loop
-        for (int t = 0; t < 64; ++t) {
-            uint32_t T1 = h + BSIG1(e) + CH(e, f, g) + (uint32_t)K[t] + W[t];
-            uint32_t T2 = BSIG0(a) + MAJ(a, b, c);
-            h = g;
-            g = f;
-            f = e;
-            e = d + T1;
-            d = c;
-            c = b;
-            b = a;
-            a = T1 + T2;
-        }
+		// Main compression loop
+		for (int t = 0; t < 64; ++t) {
+			uint32_t T1 = h + BSIG1(e) + CH(e, f, g) + (uint32_t)K[t] + W[t];
+			uint32_t T2 = BSIG0(a) + MAJ(a, b, c);
+			h = g;
+			g = f;
+			f = e;
+			e = d + T1;
+			d = c;
+			c = b;
+			b = a;
+			a = T1 + T2;
+		}
 
-        // Add the compressed chunk to the current hash value
-        h0 += a;
-        h1 += b;
-        h2 += c;
-        h3 += d;
-        h4 += e;
-        h5 += f;
-        h6 += g;
-        h7 += h;
-    }
+		// Add the compressed chunk to the current hash value
+		h0 += a;
+		h1 += b;
+		h2 += c;
+		h3 += d;
+		h4 += e;
+		h5 += f;
+		h6 += g;
+		h7 += h;
+	}
 
-    store_be32(&data->digest[ 0], h0);
-    store_be32(&data->digest[ 4], h1);
-    store_be32(&data->digest[ 8], h2);
-    store_be32(&data->digest[12], h3);
-    store_be32(&data->digest[16], h4);
-    store_be32(&data->digest[20], h5);
-    store_be32(&data->digest[24], h6);
-    store_be32(&data->digest[28], h7);
+	store_be32(&data->digest[ 0], h0);
+	store_be32(&data->digest[ 4], h1);
+	store_be32(&data->digest[ 8], h2);
+	store_be32(&data->digest[12], h3);
+	store_be32(&data->digest[16], h4);
+	store_be32(&data->digest[20], h5);
+	store_be32(&data->digest[24], h6);
+	store_be32(&data->digest[28], h7);
 
-    print_sha256_digest(ctx, data->digest, stdin);
+	print_digest(ctx, "MD5", data->digest, stdin);
 }
 
 static void sha256_free(struct program_ctx *ctx)
