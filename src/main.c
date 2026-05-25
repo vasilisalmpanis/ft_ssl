@@ -83,6 +83,7 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 	char *file = NULL;
 	char *string = NULL;
 	char *stdin = NULL;
+	bool accept_string = true;
 	bool input_seen = false;
 	int status = 0;
 	size_t out_size;
@@ -109,7 +110,7 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 			ctx->reverse = true;
 			continue;
 		}
-		else if (!file && strcmp(argv[i], "-s") == 0) {
+		else if (accept_string && strcmp(argv[i], "-s") == 0) {
 			input_seen = true;
 			if (i + 1 < argc) {
 				string = argv[i + 1];
@@ -122,6 +123,7 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 				status = 1;
 			}
 		} else {
+			accept_string = false;
 			input_seen = true;
 			int fd = open(argv[i], O_RDONLY);
 			if (fd < 0) {
