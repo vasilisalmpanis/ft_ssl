@@ -20,7 +20,7 @@ void usage(char *name)
 void parse_type(struct program_ctx *ctx, char *type)
 {
 	for (int i = 0; type_table[i] != NULL; i++) {
-		if (memcmp(type, type_table[i]->name, strlen(type)) == 0) {
+		if (strcmp(type, type_table[i]->name) == 0) {
 			// Initialize context
 			ctx->type = *type_table[i];
 		}
