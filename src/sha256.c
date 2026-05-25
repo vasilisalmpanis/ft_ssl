@@ -197,7 +197,7 @@ static void sha256_digest(struct program_ctx *ctx, bool stdin)
 	store_be32(&data->digest[24], h6);
 	store_be32(&data->digest[28], h7);
 
-	print_digest(ctx, "MD5", data->digest, stdin);
+	print_digest(ctx, "SHA256", data->digest, stdin);
 }
 
 static void sha256_free(struct program_ctx *ctx)
