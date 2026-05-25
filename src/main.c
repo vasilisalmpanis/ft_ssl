@@ -78,18 +78,22 @@ void hash(struct program_ctx* ctx, bool stdin)
 	}
 }
 
-void parse_args(struct program_ctx *ctx, int argc, char **argv)
+int parse_args(struct program_ctx *ctx, int argc, char **argv)
 {
 	char *file = NULL;
 	char *string = NULL;
 	char *stdin = NULL;
+	bool input_seen = false;
+	int status = 0;
 	size_t out_size;
 	parse_type(ctx, argv[1]);
 	for (int i = 2; i < argc; i++) {
 		if (strcmp(argv[i], "-p") == 0) {
+			input_seen = true;
 			ctx->echo = true;
 			stdin = read_file_to_buffer(STDIN_FILENO, &out_size);
-			if (stdin == NULL) return ;
+			if (stdin == NULL)
+				return (1);
 
 			ctx->user_input = (uint8_t *)stdin;
 			ctx->user_input_len = out_size;
@@ -106,6 +110,7 @@ void parse_args(struct program_ctx *ctx, int argc, char **argv)
 			continue;
 		}
 		else if (!file && strcmp(argv[i], "-s") == 0) {
+			input_seen = true;
 			if (i + 1 < argc) {
 				string = argv[i + 1];
 				ctx->user_input = (uint8_t *)string;
@@ -114,16 +119,20 @@ void parse_args(struct program_ctx *ctx, int argc, char **argv)
 				i++;
 			} else {
 				printf("%s: %s: Invalid argument\n", argv[0], argv[i]);
+				status = 1;
 			}
 		} else {
+			input_seen = true;
 			int fd = open(argv[i], O_RDONLY);
 			if (fd < 0) {
 				printf("%s: %s: %s: No such file or directory\n", argv[0], ctx->type.name, argv[i]);
+				status = 1;
 				continue;
 			}
 			file = read_file_to_buffer(fd, &out_size);
 			if (!file) {
 				close(fd);
+				status = 1;
 				continue;
 			}
 			ctx->user_input = (uint8_t *)file;
@@ -135,15 +144,17 @@ void parse_args(struct program_ctx *ctx, int argc, char **argv)
 			file = NULL;
 		}
 	}
-	if (ctx->user_input == NULL) {
+	if (!input_seen) {
 		stdin = read_file_to_buffer(STDIN_FILENO, &out_size);
-		if (stdin == NULL) return ;
+		if (stdin == NULL)
+			return (1);
 
 		ctx->user_input = (uint8_t *)stdin;
 		ctx->user_input_len = out_size;
 		hash(ctx, true);
 		free(stdin);
 	}
+	return (status);
 }
 
 int main(int argc, char *argv[])
@@ -157,6 +168,5 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 	memset(&context, 0, sizeof(struct program_ctx));
-	parse_args(&context, argc, argv);
-	return 0;
+	return (parse_args(&context, argc, argv));
 }
