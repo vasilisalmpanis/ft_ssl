@@ -32,7 +32,7 @@ char *read_file_to_buffer(int fd, size_t *out_size)
 {
     size_t capacity = 1024;   // initial buffer size
     size_t size = 0;
-    char *buffer = malloc(capacity);
+    char *buffer = malloc(capacity + 1);
     if (!buffer)
         return NULL;
 
@@ -41,7 +41,7 @@ char *read_file_to_buffer(int fd, size_t *out_size)
         size += bytes;
         if (size == capacity) {
             capacity *= 2;
-            char *new_buf = realloc(buffer, capacity);
+            char *new_buf = realloc(buffer, capacity + 1);
             if (!new_buf) {
                 free(buffer);
                 return NULL;
@@ -62,6 +62,15 @@ char *read_file_to_buffer(int fd, size_t *out_size)
         *out_size = size;
 
     return buffer;
+}
+
+static void clear_input(struct program_ctx *ctx)
+{
+	ctx->file = false;
+	ctx->filename = NULL;
+	ctx->user_input = NULL;
+	ctx->user_input_len = 0;
+	ctx->data = NULL;
 }
 
 void hash(struct program_ctx* ctx, bool stdin)
@@ -100,6 +109,7 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 			ctx->user_input_len = out_size;
 			hash(ctx, true);
 			free(stdin);
+			clear_input(ctx);
 			continue;
 		}
 		else if (strcmp(argv[i], "-q") == 0) {
@@ -117,6 +127,7 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 				ctx->user_input = (uint8_t *)string;
 				ctx->user_input_len = strlen(string);
 				hash(ctx, false);
+				clear_input(ctx);
 				i++;
 			} else {
 				printf("%s: %s: Invalid argument\n", argv[0], argv[i]);
@@ -132,8 +143,8 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 				continue;
 			}
 			file = read_file_to_buffer(fd, &out_size);
+			close(fd);
 			if (!file) {
-				close(fd);
 				status = 1;
 				continue;
 			}
@@ -143,6 +154,7 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 			ctx->filename = argv[i];
 			hash(ctx, false);
 			free(file);
+			clear_input(ctx);
 			file = NULL;
 		}
 	}
@@ -155,6 +167,7 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 		ctx->user_input_len = out_size;
 		hash(ctx, true);
 		free(stdin);
+		clear_input(ctx);
 	}
 	return (status);
 }
