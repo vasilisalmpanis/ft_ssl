@@ -6,11 +6,11 @@ static void sha256_digest(struct program_ctx *ctx, bool stdin);
 static void sha256_free(struct program_ctx *ctx);
 
 struct hash_type sha256_type = {
-	.name 		= "sha256", 
+	.name 		= "sha256",
 	.id 		= SHA256,
-	.digest_size 	= 32, 
-	.init 		= sha256_init, 
-	.digest 	= sha256_digest, 
+	.digest_size 	= 32,
+	.init 		= sha256_init,
+	.digest 	= sha256_digest,
 	.free 		= sha256_free
 };
 

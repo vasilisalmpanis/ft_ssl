@@ -6,11 +6,11 @@ static void md5_digest(struct program_ctx *ctx, bool stdin);
 static void md5_free(struct program_ctx *ctx);
 
 struct hash_type md5_type = {
-	.name 		= "md5", 
-	.id 		= MD5, 
-	.digest_size 	= 16, 
-	.init 		= md5_init, 
-	.digest 	= md5_digest, 
+	.name 		= "md5",
+	.id 		= MD5,
+	.digest_size 	= 16,
+	.init 		= md5_init,
+	.digest 	= md5_digest,
 	.free 		= md5_free
 };
 

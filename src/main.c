@@ -30,7 +30,7 @@ void parse_type(struct program_ctx *ctx, char *type)
 
 char *read_file_to_buffer(int fd, size_t *out_size)
 {
-    size_t capacity = 1024;   // initial buffer size
+    size_t capacity = 1024;
     size_t size = 0;
     char *buffer = malloc(capacity + 1);
     if (!buffer)
@@ -50,12 +50,11 @@ char *read_file_to_buffer(int fd, size_t *out_size)
         }
     }
 
-    if (bytes < 0) { // read error
+    if (bytes < 0) {
         free(buffer);
         return NULL;
     }
 
-    // Optional: add null terminator if you want to treat it as string
     buffer[size] = '\0';
 
     if (out_size)
