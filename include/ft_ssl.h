@@ -65,42 +65,59 @@ struct program_ctx {
     } while (0)
 
 __attribute__((unused))
+static void print_hex_digest(struct program_ctx *ctx, uint8_t *digest)
+{
+	for (int i = 0; i < ctx->type.digest_size; i++) {
+		printf("%02x", digest[i]);
+	}
+}
+
+__attribute__((unused))
+static void print_input(uint8_t *input, size_t len, bool trim_newline)
+{
+	if (trim_newline && len > 0 && input[len - 1] == '\n') {
+		len--;
+	}
+	for (size_t i = 0; i < len; i++) {
+		printf("%c", input[i]);
+	}
+}
+
+__attribute__((unused))
 static void print_digest(struct program_ctx* ctx, char* type, uint8_t *digest, bool stdin)
 {
-	if (ctx->reverse) {
-		for(int i = 0; i < ctx->type.digest_size; i++) {
-			printf("%02x", digest[i]);
-		}
-		if (stdin && !ctx->quiet) {
-			if (ctx->echo)
-				printf(" (\"%s\") ", ctx->user_input);
-			else
-				printf(" (stdin) ");
-		}
-		else if (ctx->user_input) {
-			if (!ctx->quiet && ctx->file) {
-				printf(" %s ", ctx->filename);
-			} else if (!ctx->quiet) {
-				printf(" \"%s\" ", ctx->user_input);
-			}
-		}
-	} else {
-		if (stdin && !ctx->quiet) {
-			if (ctx->echo)
-				printf("(\"%s\")= ", ctx->user_input);
-			else
-				printf("(stdin)= ");
-		}
-		else if (ctx->user_input) {
-			if (!ctx->quiet && ctx->file) {
-				printf("%s(%s)= ", type, ctx->filename);
-			} else if (!ctx->quiet) {
-				printf("%s(\"%s\")= ", type, ctx->user_input);
-			}
-		}
-		for(int i = 0; i < ctx->type.digest_size; i++) {
-			printf("%02x", digest[i]);
-		}
+	if (ctx->quiet) {
+		if (stdin && ctx->echo)
+			print_input(ctx->user_input, ctx->user_input_len, false);
+		print_hex_digest(ctx, digest);
+		printf("\n");
+		return ;
 	}
+	if (stdin && ctx->echo) {
+		printf("(\"");
+		print_input(ctx->user_input, ctx->user_input_len, true);
+		printf("\")= ");
+		print_hex_digest(ctx, digest);
+		printf("\n");
+		return ;
+	}
+	if (ctx->reverse) {
+		print_hex_digest(ctx, digest);
+		if (stdin)
+			printf(" (stdin)");
+		else if (ctx->file)
+			printf(" %s", ctx->filename);
+		else
+			printf(" \"%s\"", ctx->user_input);
+		printf("\n");
+		return ;
+	}
+	if (stdin)
+		printf("(stdin)= ");
+	else if (ctx->file)
+		printf("%s (%s) = ", type, ctx->filename);
+	else
+		printf("%s (\"%s\") = ", type, ctx->user_input);
+	print_hex_digest(ctx, digest);
 	printf("\n");
 }
