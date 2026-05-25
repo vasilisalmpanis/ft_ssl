@@ -25,4 +25,7 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+test: all
+		sh tests/test_ft_ssl.sh
+
+.PHONY: all clean fclean re test
