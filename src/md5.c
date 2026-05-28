@@ -1,6 +1,5 @@
 #include <ft_ssl.h>
 
-
 static void md5_init(struct program_ctx *ctx);
 static void md5_digest(struct program_ctx *ctx, bool stdin);
 static void md5_free(struct program_ctx *ctx);

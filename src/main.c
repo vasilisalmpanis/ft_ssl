@@ -1,8 +1,12 @@
 #include <ft_ssl.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 static struct hash_type *type_table[] = {
 	&md5_type,
 	&sha256_type,
+	&blake2_type,
 	NULL,
 };
 
@@ -95,6 +99,13 @@ int parse_args(struct program_ctx *ctx, int argc, char **argv)
 	bool input_seen = false;
 	int status = 0;
 	size_t out_size;
+	for(size_t i = 1; i < (size_t)argc; i++) {
+		if (strcmp(argv[i], "-h") == 0 ||
+				strcmp(argv[i], "--help") == 0) {
+			usage(argv[0]);
+			return 0;
+		}
+	}
 	parse_type(ctx, argv[1]);
 	for (int i = 2; i < argc; i++) {
 		if (strcmp(argv[i], "-p") == 0) {

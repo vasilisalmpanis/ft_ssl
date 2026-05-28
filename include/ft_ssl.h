@@ -10,7 +10,7 @@
 #define USAGE_MSG "command [flags]... [file/string]...\n"
 #define INVALID_TYPE "Invalid command '%s'; type \"help\" for a list.\n"
 #define HELP_MSG  "\nStandard commands:\n" \
-	"md5 sha256\n" \
+	"md5 sha256 blake2s256\n" \
 	"\nOptions:\n" \
 	"  -p	echo STDIN to STDOUT and append the checksum to STDOUT\n" \
 	"  -q	quiet mode\n" \
@@ -28,17 +28,19 @@
 
 extern struct hash_type md5_type;
 extern struct hash_type sha256_type;
+extern struct hash_type blake2_type;
 
 struct program_ctx;
 
 struct hash_type {
-	char* name;
-	int id;
-	int digest_size;
-
 	void (*init)(struct program_ctx *);
 	void (*digest)(struct program_ctx *, bool stdin);
 	void (*free)(struct program_ctx *);
+
+	size_t digest_size;
+	char *name;
+	int id;
+
 };
 
 struct program_ctx {
@@ -68,7 +70,7 @@ struct program_ctx {
 __attribute__((unused))
 static void print_hex_digest(struct program_ctx *ctx, uint8_t *digest)
 {
-	for (int i = 0; i < ctx->type.digest_size; i++) {
+	for (size_t i = 0; i < ctx->type.digest_size; i++) {
 		printf("%02x", digest[i]);
 	}
 }
