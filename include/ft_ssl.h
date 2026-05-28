@@ -24,6 +24,7 @@
 #define NONE 0
 #define MD5 1
 #define SHA256 2
+#define BLAKE2 3
 
 extern struct hash_type md5_type;
 extern struct hash_type sha256_type;
